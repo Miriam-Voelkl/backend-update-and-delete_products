@@ -3,15 +3,37 @@ import Product from "../../../db/models/Product";
 
 export default async function handler(request, response) {
   await dbConnect();
-  const { id } = request.query;
 
-  if (request.method === "GET") {
-    const product = await Product.findById(id).populate("reviews");
+  try {
+    const { id } = request.query;
 
-    if (!product) {
-      return response.status(404).json({ status: "Not Found" });
+    if (request.method === "GET") {
+      const product = await Product.findById(id).populate("reviews");
+
+      if (!product) {
+        return response.status(404).json({ status: "Not Found" });
+      }
+
+      response.status(200).json(product);
+    } else if (request.method === "PUT") {
+      const updatedProduct = request.body;
+      await Product.findByIdAndUpdate(id, updatedProduct);
+      response
+        .status(200)
+        .json({ status: "success", message: "Product updated!" });
+    } else if (request.method === "DELETE") {
+      await Product.findByIdAndDelete(id);
+      response.status(200).json({ status: "Product successfully deleted." });
+    } else {
+      response
+        .status(405)
+        .json({ status: "error", message: "Method not allowed" });
     }
-
-    response.status(200).json(product);
+  } catch (error) {
+    response.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 }
